@@ -26,8 +26,8 @@ exports.handler = async (event, context, callback) => {
 }
 
 const seedUser = {
-  email: 'jane@prisma.io',
-  name: 'Jane',
+  username: 'admin-calcufy',
+  password: '',
   profile: {
     create: {
       bio: 'Health Enthusiast',
