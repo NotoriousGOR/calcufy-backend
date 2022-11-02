@@ -1,64 +1,74 @@
 const { dataVerification } = require("../helpers/verifyData");
 
-const { Prisma, PrismaClient } = require("@prisma/client");
+const { PrismaClient } = require("@prisma/client");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 const prisma = new PrismaClient();
 
+exports.handler = async (event) => {
+	try {
+		const { username, password } = JSON.parse(event.body);
+		// checks for username, password, and that the password is at least 8 characters
+		const verified = await dataVerification(username, password);
 
-exports.handler = async (event, context, callback) => {
-  try {
-    const { username, password } = JSON.parse(event.body);
-    // checks for username, password, and that the password is at least 8 characters
-    const verified = await dataVerification(username, password);
+		if (!verified.pass) {
+			return {
+				statusCode: 400,
+				headers: { "Content-Type": "application/json" },
+				body: verified.reason,
+			};
+		}
 
-    if (!verified.pass) {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: verified.reason,
-      };
-    }
+		const user = await prisma.user.findFirst({
+			where: {
+				username: username,
+			},
+		});
 
-    await prisma.user.create({
-      data: {
-        username: username,
-        password: bcrypt.hashSync(password),
-      },
-    });
+		// if user doesn't exist return error
+		if (!user) {
+			return {
+				statusCode: 400,
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					message: `Username ${username} does not exist`,
+				}),
+			};
+		}
 
-    const token = jwt.sign(
-      {
-        username,
-        profile,
-      },
-      params.JWT_SECRET,
-      { expiresIn: "24h" }
-    );
+		// comparing db password and supplied password, if fails it returns an error
+		if (!bcrypt.compareSync(password, user.password)) {
+			return {
+				statusCode: 400,
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					message: "Password doesn't match",
+				}),
+			};
+		}
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username,
-        token,
-      }),
-    };
-  } catch (e) {
-    if (e instanceof Prisma.PrismaClientRequestError) {
-      if (e.code === "P2002") {
-        return {
-          statusCode: 409,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            error: "A user with this email already exists",
-          }),
-        };
-      }
-    }
+		const token = jwt.sign(
+			{
+				username,
+				profile: user.profile,
+			},
+			process.env.JWT_SECRET,
+			{ expiresIn: "24h" }
+		);
 
-    console.error(e);
-    return { statusCode: 500 };
-  }
+		return {
+			statusCode: 200,
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				username,
+				token,
+			}),
+		};
+	} catch (e) {
+		console.log(e);
+		return {
+			statusCode: 500,
+		};
+	}
 };

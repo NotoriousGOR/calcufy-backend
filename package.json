@@ -12,6 +12,7 @@
     "jsonwebtoken": "^8.5.1"
   },
   "devDependencies": {
+    "eslint": "^8.26.0",
     "prisma": "4.5.0",
     "serverless-dotenv-plugin": "4.0.2"
   }
