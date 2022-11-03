@@ -1,4 +1,4 @@
-service: prisma-aws-lambda-example
+service: calcufy
 plugins:
   - serverless-dotenv-plugin
 
