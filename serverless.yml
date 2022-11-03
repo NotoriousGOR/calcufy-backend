@@ -14,12 +14,6 @@ functions:
       - http:
           method: GET
           path: /
-  seed:
-    handler: handlers/seed.handler
-    events:
-      - http:
-          method: GET
-          path: /seed
   login:
     handler: handlers/login.handler
     events:

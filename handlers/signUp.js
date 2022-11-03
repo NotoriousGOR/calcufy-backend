@@ -14,7 +14,7 @@ exports.handler = async (event) => {
 
 		if (!verified.pass) {
 			return {
-				statusCode: 400,
+				statusCode: 401,
 				headers: { "Content-Type": "application/json" },
 				body: verified.reason,
 			};

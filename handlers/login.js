@@ -14,7 +14,7 @@ exports.handler = async (event) => {
 
 		if (!verified.pass) {
 			return {
-				statusCode: 400,
+				statusCode: 401,
 				headers: { "Content-Type": "application/json" },
 				body: verified.reason,
 			};
@@ -29,7 +29,7 @@ exports.handler = async (event) => {
 		// if user doesn't exist return error
 		if (!user) {
 			return {
-				statusCode: 400,
+				statusCode: 401,
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					message: `Username ${username} does not exist`,
@@ -40,7 +40,7 @@ exports.handler = async (event) => {
 		// comparing db password and supplied password, if fails it returns an error
 		if (!bcrypt.compareSync(password, user.password)) {
 			return {
-				statusCode: 400,
+				statusCode: 401,
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					message: "Password doesn't match",
