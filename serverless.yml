@@ -36,7 +36,7 @@ functions:
     handler: handlers/transactions.handler
     events:
       - http:
-          method: GET
+          method: POST
           path: /transactions
 
 # only include the Prisma binary required on AWS Lambda while packaging
