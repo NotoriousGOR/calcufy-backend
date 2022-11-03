@@ -27,8 +27,9 @@ Requirements:
 * Prisma
 * JWT
 * BCrypt
-* Serverless
-* node-fetch
+* AWS CloudFormation
+* Lambda
+* RDS
 
 ## Installation
 
