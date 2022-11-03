@@ -13,17 +13,19 @@ model Operation {
   type       String
   cost       Int
   created_at DateTime @default(now())
+  Record     Record[]
 }
 
 model Record {
-  id                 Int      @id @default(autoincrement())
+  id                 Int       @id @default(autoincrement())
   operation_id       Int
   user_id            Int
   amount             Int
   user_balance       Int
   operation_response String
-  date               DateTime @default(now())
-  User               User?    @relation(fields: [user_id], references: [id])
+  date               DateTime  @default(now())
+  User               User?     @relation(fields: [user_id], references: [id])
+  Operation          Operation @relation(fields: [operation_id], references: [id])
 }
 
 model User {
@@ -31,7 +33,7 @@ model User {
   username   String   @unique
   password   String   @unique
   status     String   @default("active")
-  currency   Int      @default(20)
+  credit     Int      @default(20)
   records    Record[]
   updated_at DateTime @default(now())
   created_at DateTime @default(now())

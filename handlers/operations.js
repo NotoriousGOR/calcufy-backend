@@ -7,9 +7,11 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
-exports.handler = async (event) => {
+exports.handler = async (event, context, callback) => {
 	try {
-		const { Authorization: token } = event.headers["Authorization"];
+		const token = event.headers["Authorization"];
+		const { operandA, operandB, op } = JSON.parse(event.body);
+
 		// checks for username, password, and that the password is at least 8 characters
 		if (!token) {
 			return {
@@ -25,92 +27,92 @@ exports.handler = async (event) => {
 			process.env.JWT_SECRET,
 			(err, decoded) => {
 				if (err) {
-					return false;
+					// returns error if incorrect token was passed
+					callback("401 Unauthorized");
 				} else {
 					return decoded.username;
 				}
 			}
 		);
 
-		// returns error if incorrect token was passed
-		if (!username) {
-			return {
-				statusCode: 401,
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					message: "Unauthorized",
-				}),
-			};
-		}
-
 		const user = await prisma.user.findFirst({
 			where: {
 				username: username,
 			},
 			select: {
-				currency: true,
+				credit: true,
+				id: true,
+			},
+		});
+
+		const operation = await prisma.operation.findFirst({
+			where: {
+				type: op,
+			},
+			select: {
+				cost: true,
 				id: true,
 			},
 		});
 
 		let res = {
-			a: event.b ? Number(event.a) : "",
-			b: event.b ? Number(event.b) : "",
-			op: event.op,
+			operation: op,
 		};
 
-		switch (res.op) {
-		case "+":
-		case "add":
-			if (verifyData.operationInputValidator(res.a, res.b, res.op).pass) {
-				res.c = res.a + res.b;
-				res.balance = await handleTransaction(user, "addition", res.c);
+		switch (res.operation) {
+		case "addition":
+			if (
+				verifyData.operationInputValidator(operandA, operandB, op).pass &&
+          user.credit - operation.cost > 0
+			) {
+				res.result = operandA + operandB;
+				res.balance = await handleTransaction(user, operation, res.result);
 			}
 			break;
 
-		case "-":
-		case "sub":
-			if (verifyData.operationInputValidator(res.a, res.b, res.op).pass) {
-				res.c = res.a - res.b;
-				res.balance = await handleTransaction(user, "subtraction", res.c);
+		case "subtraction":
+			if (
+				verifyData.operationInputValidator(operandA, operandB, op).pass &&
+          user.credit - operation.cost > 0
+			) {
+				res.result = operandA - operandB;
+				res.balance = await handleTransaction(user, operation, res.result);
 			}
 			break;
 
-		case "*":
-		case "mul":
-			if (verifyData.operationInputValidator(res.a, res.b, res.op).pass) {
-				res.c = res.a * res.b;
-				res.balance = await handleTransaction(user, "multiplication", res.c);
+		case "multiplication":
+			if (
+				verifyData.operationInputValidator(operandA, operandB, op).pass &&
+          user.credit - operation.cost > 0
+			) {
+				res.result = operandA * operandB;
+				res.balance = await handleTransaction(user, operation, res.result);
 			}
 			break;
 
-		case "/":
-		case "div":
-			if (verifyData.operationInputValidator(res.a, res.b, res.op).pass) {
-				res.c = res.b === 0 ? NaN : Number(res.a) / Number(res.b);
-				res.balance = await handleTransaction(user, "division", res.c);
+		case "division":
+			if (
+				verifyData.operationInputValidator(operandA, operandB, op).pass &&
+          user.credit - operation.cost > 0
+			) {
+				res.result =
+            operandB === 0 ? NaN : Number(operandA) / Number(operandB);
+				res.balance = await handleTransaction(user, operation, res.result);
 			}
 			break;
 
-		case "sqrt":
 		case "square_root":
-			res.c = Math.sqrt(res.a);
-			res.balance = await handleTransaction(user, "square_root", res.c);
+			res.result = Math.sqrt(operandA);
+			res.balance = await handleTransaction(user, operation, res.result);
 
 			break;
 
 		case "random_string":
-			fetch(
+			res.result = await fetch(
 				"https://www.random.org/strings/?num=1&len=8&digits=on&upperalpha=on&loweralpha=on&unique=on&format=plain&rnd=new"
-			).then((result) => {
-				res.string = result.json();
-			});
+			).then((result) => result.text());
 
-			res.balance = await handleTransaction(
-				user,
-				"random_string",
-				res.string
-			);
+			res.balance = await handleTransaction(user, operation, res.result);
 			break;
 
 		default:
@@ -140,36 +142,29 @@ exports.handler = async (event) => {
 	}
 };
 
-const handleTransaction = async (user, type, result) => {
-	const operation = await prisma.operation.findFirst({
-		where: {
-			type: type,
-		},
-		select: {
-			cost: true,
-			id: true,
-		},
-	});
-
+// handles transaction in db and returns remaining balance
+const handleTransaction = async (user, operation, result) => {
 	await prisma.record.create({
 		data: {
 			operation_id: operation.id,
 			user_id: user.id,
 			amount: operation.cost,
-			user_balance: user.currency - operation.cost,
-			operation_response: result
+			user_balance: user.credit - operation.cost,
+			operation_response: `${result}`,
 		},
 	});
 
-	return await prisma.user.update({
+	const { credit } = await prisma.user.update({
 		where: {
 			id: user.id,
 		},
 		data: {
-			currency: user.currency - operation.cost,
+			credit: user.credit - operation.cost,
 		},
 		select: {
-			currency: true,
+			credit: true,
 		},
 	});
+
+	return credit;
 };
