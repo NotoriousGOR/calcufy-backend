@@ -95,7 +95,7 @@ To deploy this project run
 | Parameter | Type     | Description                |
 | :-------- | :------- | :------------------------- |
 | `operandA` | `string` | **Required** (not on random_string, or square_root)|
-| `operandb` | `string` | **Required** (not on random_string, or square_root)|
+| `operandB` | `string` | **Required** (not on random_string, or square_root)|
 | `op` | `string` | **Required** (addition, subtraction, multiplication, division, square_root, random_string)
 
 #### Get performed operations (Requires Authorization Header)
