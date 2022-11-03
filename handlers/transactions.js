@@ -1,11 +1,12 @@
-const { PrismaClient } = require("@prisma/client");
 const jwt = require("jsonwebtoken");
+const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
-exports.handler = async (event) => {
+exports.handler = async (event, context, callback) => {
 	try {
 		const token = event.headers["Authorization"];
+
 		// checks for username, password, and that the password is at least 8 characters
 		if (!token) {
 			return {
@@ -16,36 +17,30 @@ exports.handler = async (event) => {
 		}
 
 		// attempts to verify the token provided by the user and extracts the username from verification payload
-		const username = jwt.verify(
+		const { username } = jwt.verify(
 			token,
 			process.env.JWT_SECRET,
 			(err, decoded) => {
 				if (err) {
-					return false;
+					// returns error if incorrect token was passed
+					callback("401 Unauthorized");
 				} else {
-					return decoded.username;
+					return decoded;
 				}
 			}
 		);
-
-		// returns error if incorrect token was passed
-		if (!username) {
-			return {
-				statusCode: 401,
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					message: "Unauthorized",
-				}),
-			};
-		}
 
 		const user = await prisma.user.findFirst({
 			where: {
 				username: username,
 			},
+			select: {
+				credit: true,
+				id: true,
+			},
 		});
 
-		const transactions = await prisma.record.findMany({
+		const records = await prisma.record.findMany({
 			where: {
 				user_id: user.id,
 			},
@@ -57,13 +52,15 @@ exports.handler = async (event) => {
 			},
 		});
 
+		// return res
 		return {
 			statusCode: 200,
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(transactions),
+			body: JSON.stringify(records),
 		};
 	} catch (e) {
 		console.error(e);
+
 		return {
 			statusCode: 401,
 			headers: { "Content-Type": "application/json" },
