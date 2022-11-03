@@ -1,6 +1,6 @@
 const dataVerification = require("../helpers/verifyData").dataVerification;
 
-const { Prisma, PrismaClient } = require("@prisma/client");
+const { PrismaClient } = require("@prisma/client");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
@@ -44,18 +44,6 @@ exports.handler = async (event) => {
 			}),
 		};
 	} catch (e) {
-		if (e instanceof Prisma.PrismaClientRequestError) {
-			if (e.code === "P2002") {
-				return {
-					statusCode: 409,
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						error: "A user with this email already exists",
-					}),
-				};
-			}
-		}
-
 		console.error(e);
 		return { statusCode: 500 };
 	}
