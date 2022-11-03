@@ -109,7 +109,7 @@ exports.handler = async (event, context, callback) => {
 
 		case "random_string":
 			res.result = await fetch(
-				"https://www.random.org/strings/?num=1&len=8&digits=on&upperalpha=on&loweralpha=on&unique=on&format=plain&rnd=new"
+				"https://www.random.org/strings/?num=1&len=18&digits=on&upperalpha=on&loweralpha=on&unique=on&format=plain&rnd=new"
 			).then((result) => result.text());
 
 			res.balance = await handleTransaction(user, operation, res.result);
