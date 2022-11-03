@@ -1,6 +1,13 @@
-const jwt = require("jsonwebtoken");
+const verifyData = require("../helpers/verifyData");
 
-exports.handler = async (event, context, callback) => {
+const jwt = require("jsonwebtoken");
+const fetch = require("node-fetch");
+
+const { PrismaClient } = require("@prisma/client");
+
+const prisma = new PrismaClient();
+
+exports.handler = async (event) => {
 	try {
 		const { Authorization: token } = event.headers["Authorization"];
 		// checks for username, password, and that the password is at least 8 characters
@@ -12,21 +19,21 @@ exports.handler = async (event, context, callback) => {
 			};
 		}
 
-		// attempts to verify the token provided by the user
-		const user = jwt.verify(
+		// attempts to verify the token provided by the user and extracts the username from verification payload
+		const username = jwt.verify(
 			token,
 			process.env.JWT_SECRET,
-			(err, verifiedJwt) => {
+			(err, decoded) => {
 				if (err) {
 					return false;
 				} else {
-					return verifiedJwt;
+					return decoded.username;
 				}
 			}
 		);
 
 		// returns error if incorrect token was passed
-		if (!user) {
+		if (!username) {
 			return {
 				statusCode: 401,
 				headers: { "Content-Type": "application/json" },
@@ -36,56 +43,78 @@ exports.handler = async (event, context, callback) => {
 			};
 		}
 
-		if (
-			event.a === undefined ||
-      event.b === undefined ||
-      event.op === undefined
-		) {
-			callback("400 Invalid Input");
-		}
+		let res = {
+			a: event.b ? Number(event.a) : "",
+			b: event.b ? Number(event.b) : "",
+			op: event.op,
+		};
 
-		var res = {};
-		res.a = Number(event.a);
-		res.b = Number(event.b);
-		res.op = event.op;
-
-		if (isNaN(event.a) || isNaN(event.b)) {
-			callback("400 Invalid Operand");
-		}
-
-		switch (event.op) {
+		switch (res.op) {
 		case "+":
 		case "add":
-			res.c = res.a + res.b;
+			if (verifyData.operationInputValidator(res.a, res.b, res.op).pass) {
+				res.balance = await handleTransaction(username, "addition");
+				res.c = res.a + res.b;
+			}
 			break;
+
 		case "-":
 		case "sub":
-			res.c = res.a - res.b;
+			if (verifyData.operationInputValidator(res.a, res.b, res.op).pass) {
+				res.balance = await handleTransaction(username, "subtraction");
+				res.c = res.a - res.b;
+			}
 			break;
+
 		case "*":
 		case "mul":
-			res.c = res.a * res.b;
+			if (verifyData.operationInputValidator(res.a, res.b, res.op).pass) {
+				res.balance = await handleTransaction(username, "multiplication");
+				res.c = res.a * res.b;
+			}
 			break;
+
 		case "/":
 		case "div":
-			res.c = res.b === 0 ? NaN : Number(event.a) / Number(event.b);
+			if (verifyData.operationInputValidator(res.a, res.b, res.op).pass) {
+				res.balance = await handleTransaction(username, "division");
+				res.c = res.b === 0 ? NaN : Number(res.a) / Number(res.b);
+			}
 			break;
-		default:
-			callback("400 Invalid Operator");
-			break;
-		}
-		callback(null, res);
 
+		case "sqrt":
+		case "square_root":
+			res.balance = await handleTransaction(username, "square_root");
+			res.c = Math.sqrt(res.a);
+			break;
+
+		case "random_string":
+			res.balance = await handleTransaction(username, "random_string");
+			res.string = fetch(
+				"https://www.random.org/strings/?num=1&len=8&digits=on&upperalpha=on&loweralpha=on&unique=on&format=plain&rnd=new"
+			).then((result) => {
+				console.log(result.json());
+				return result.json();
+			});
+			break;
+
+		default:
+			return {
+				statusCode: 400,
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify("Invalid Operator"),
+			};
+		}
+
+		// return res
 		return {
 			statusCode: 200,
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				username,
-				user,
-			}),
+			body: JSON.stringify(res),
 		};
 	} catch (e) {
 		console.error(e);
+		
 		return {
 			statusCode: 401,
 			headers: { "Content-Type": "application/json" },
@@ -96,4 +125,31 @@ exports.handler = async (event, context, callback) => {
 	}
 };
 
-, , , , )
+const handleTransaction = async (username, type) => {
+	const user = await prisma.user.findFirst({
+		where: {
+			username: username,
+		},
+	});
+
+	const { cost } = await prisma.operation.findFirst({
+		where: {
+			type: type,
+		},
+		select: {
+			cost: true,
+		},
+	});
+
+	return await prisma.user.update({
+		where: {
+			username: username,
+		},
+		data: {
+			currency: user.currency - cost,
+		},
+		select: {
+			currency: true,
+		},
+	});
+};

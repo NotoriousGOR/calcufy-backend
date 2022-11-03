@@ -1,4 +1,4 @@
-const dataVerification = require("../helpers/verifyData").dataVerification;
+const userAndPassValidator = require("../helpers/verifyData").userAndPassValidator;
 
 const { PrismaClient } = require("@prisma/client");
 const jwt = require("jsonwebtoken");
@@ -9,8 +9,9 @@ const prisma = new PrismaClient();
 exports.handler = async (event) => {
 	try {
 		const { username, password } = JSON.parse(event.body);
+
 		// checks for username, password, and that the password is at least 8 characters
-		const verified = dataVerification(username, password);
+		const verified = userAndPassValidator(username, password);
 
 		if (!verified.pass) {
 			return {
@@ -20,6 +21,7 @@ exports.handler = async (event) => {
 			};
 		}
 
+		// hashing the password and storing in DB
 		await prisma.user.create({
 			data: {
 				username: username,

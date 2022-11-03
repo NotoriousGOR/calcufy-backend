@@ -1,4 +1,4 @@
-exports.dataVerification = (username, password) => {
+exports.userAndPassValidator = (username, password) => {
 	// checking for username and password
 	if (!username) {
 		return {
@@ -18,11 +18,34 @@ exports.dataVerification = (username, password) => {
 			}),
 		};
 	}
-  
+
 	// if verification passes all tests return true
 	return {
 		pass: true,
-		reason: JSON.stringify({ message: `User ${username} already exists.` }),
 	};
 };
-  
+
+exports.operationInputValidator = (a, b, op) => {
+	if (a === undefined || b === undefined || op === undefined) {
+		return {
+			pass: false,
+			reason: JSON.stringify({
+				message: "Missing Parameter",
+			}),
+		};
+	}
+
+	if (isNaN(a) || isNaN(b)) {
+		return {
+			pass: false,
+			reason: JSON.stringify({
+				message: "Invalid Operand",
+			}),
+		};
+	}
+
+	// if verification passes all tests return true
+	return {
+		pass: true,
+	};
+};

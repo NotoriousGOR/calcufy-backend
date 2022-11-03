@@ -29,7 +29,7 @@ model Record {
 model User {
   id         Int      @id @default(autoincrement())
   username   String   @unique
-  password   String
+  password   String   @unique
   status     String   @default("active")
   currency   Int      @default(20)
   records    Record[]
