@@ -15,21 +15,21 @@ exports.handler = async (event) => {
 			};
 		}
 
-		// attempts to verify the token provided by the user
-		const user = jwt.verify(
+		// attempts to verify the token provided by the user and extracts the username from verification payload
+		const username = jwt.verify(
 			token,
 			process.env.JWT_SECRET,
-			(err, verifiedJwt) => {
+			(err, decoded) => {
 				if (err) {
 					return false;
 				} else {
-					return verifiedJwt;
+					return decoded.username;
 				}
 			}
 		);
 
 		// returns error if incorrect token was passed
-		if (!user) {
+		if (!username) {
 			return {
 				statusCode: 401,
 				headers: { "Content-Type": "application/json" },
@@ -39,18 +39,28 @@ exports.handler = async (event) => {
 			};
 		}
 
-		await prisma.record.findMany({
+		const user = await prisma.user.findFirst({
 			where: {
-				user_id: user.id
-			}
+				username: username,
+			},
 		});
+
+		const transactions = await prisma.record.findMany({
+			where: {
+				user_id: user.id,
+			},
+			select: {
+				amount: true,
+				user_balance: true,
+				operation_response: true,
+				date: true,
+			},
+		});
+
 		return {
 			statusCode: 200,
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				username,
-				user,
-			}),
+			body: JSON.stringify(transactions),
 		};
 	} catch (e) {
 		console.error(e);
