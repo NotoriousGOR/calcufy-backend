@@ -32,17 +32,23 @@ functions:
       - http:
           method: POST
           path: /sign-up
-  getPosts:
+  operations:
     handler: handlers/operations.handler
     events:
       - http:
           method: POST
           path: /operations
+  transactions:
+    handler: handlers/transactions.handler
+    events:
+      - http:
+          method: POST
+          path: /transactions
 
 # only include the Prisma binary required on AWS Lambda while packaging
 package:
   patterns:
-    - '!node_modules/.prisma/client/libquery_engine-*'
-    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
-    - '!node_modules/prisma/libquery_engine-*'
-    - '!node_modules/@prisma/engines/**'
+    - "!node_modules/.prisma/client/libquery_engine-*"
+    - "node_modules/.prisma/client/libquery_engine-rhel-*"
+    - "!node_modules/prisma/libquery_engine-*"
+    - "!node_modules/@prisma/engines/**"
