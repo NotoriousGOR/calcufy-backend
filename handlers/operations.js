@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 
 exports.handler = async (event, context, callback) => {
 	try {
-		const token = event.headers["Authorization"];
+		const token = (event.headers["Authorization"] !== undefined) ? event.headers["Authorization"] : false;
 		const { operandA, operandB, op } = JSON.parse(event.body);
 
 		// checks for username, password, and that the password is at least 8 characters

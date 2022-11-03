@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 exports.handler = async (event, context, callback) => {
 	try {
-		const token = event.headers["Authorization"];
+		const token = (event.headers["Authorization"] !== undefined) ? event.headers["Authorization"] : false;
 
 		// checks for username, password, and that the password is at least 8 characters
 		if (!token) {
@@ -17,7 +17,7 @@ exports.handler = async (event, context, callback) => {
 		}
 
 		// attempts to verify the token provided by the user and extracts the username from verification payload
-		const { username } = jwt.verify(
+		const jwtPayload = jwt.verify(
 			token,
 			process.env.JWT_SECRET,
 			(err, decoded) => {
@@ -32,7 +32,7 @@ exports.handler = async (event, context, callback) => {
 
 		const user = await prisma.user.findFirst({
 			where: {
-				username: username,
+				username: jwtPayload.username,
 			},
 			select: {
 				credit: true,

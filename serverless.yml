@@ -32,12 +32,12 @@ functions:
       - http:
           method: POST
           path: /operations
-  transactions:
-    handler: handlers/transactions.handler
+  records:
+    handler: handlers/records.handler
     events:
       - http:
           method: POST
-          path: /transactions
+          path: /records
 
 # only include the Prisma binary required on AWS Lambda while packaging
 package:
