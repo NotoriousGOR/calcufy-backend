@@ -2,7 +2,6 @@
   "name": "prisma-aws-lambda-example",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js",
     "prisma:introspect": "prisma introspect",
     "prisma:generate": "prisma generate",
     "deploy": "npx serverless deploy"
@@ -10,8 +9,7 @@
   "dependencies": {
     "@prisma/client": "4.5.0",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^8.5.1",
-    "node-fetch": "^2.6.7"
+    "jsonwebtoken": "^8.5.1"
   },
   "devDependencies": {
     "eslint": "^8.26.0",

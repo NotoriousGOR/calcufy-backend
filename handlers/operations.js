@@ -1,7 +1,6 @@
 const verifyData = require("../helpers/verifyData");
 
 const jwt = require("jsonwebtoken");
-const fetch = require("node-fetch");
 
 const { PrismaClient } = require("@prisma/client");
 
