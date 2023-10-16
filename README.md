@@ -89,7 +89,7 @@ To deploy this project run
 #### Perform operations (Requires Authorization Header)
 
 ```http
-  POST /login
+  POST /operations
 ```
 
 | Parameter | Type     | Description                |
